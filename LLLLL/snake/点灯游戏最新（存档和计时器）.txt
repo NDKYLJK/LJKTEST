@@ -1,0 +1,151 @@
+#include<stdio.h>
+#include<string.h>
+#include<math.h>
+#include<stdlib.h>
+#include<graphics.h>
+#include<conio.h>
+#include<time.h>
+ 
+main()
+{
+	int i,k=0,j,color;
+	int n,m,a[6][6];
+	int x=160,y=120;
+	int lineX1=0,lineY=400,lineX2=80;
+	char ch,c[10];
+	IMAGE img1,img2;
+    MOUSEMSG ms;
+
+    clock_t start,finish; 
+	double duration; // 计时器；
+
+	initgraph(640,480); //
+	srand((unsigned)time(NULL)); 
+    
+    for(i=0;i<5;i++)
+		for(j=0;j<5;j++)
+			a[i][j]=0;
+    
+	setbkcolor(RGB(224,135,68));
+    cleardevice(); 
+
+	settextcolor(WHITE);
+    settextstyle(50,50,_T("宋体"));
+	outtextxy(100,20,_T("点灯游戏"));
+	setcolor(RED);
+
+	setfillcolor(BLACK);
+    fillrectangle(500,190,620,290);
+	settextstyle(50,25,_T("宋体"));
+	outtextxy(510,215,_T("退出"));
+
+	fillrectangle(10,190,130,290);
+	outtextxy(20,215,_T("存档"));
+
+    for(i=0;i<=5;i++)
+	{
+		line(160,y+i*60,460,y+i*60);
+		line(x+i*60,120,x+i*60,420);
+	}
+
+    setfillcolor(LIGHTGREEN);
+	for(i=0;i<5;i++)
+		for(j=0;j<5;j++)
+		{
+			floodfill(x+5+i*60,y+5+j*60,RED);
+		}
+  
+  start=clock();
+  while(1)
+  {
+    
+    ms=GetMouseMsg(); //实时监测；
+	if(ms.uMsg==WM_LBUTTONDOWN)
+	{
+		if(ms.x>500 && ms.x<620 && ms.y>190 && ms.y<290)
+		{
+              break;
+		}
+		if(ms.x>10 && ms.x<130 && ms.y>190 && ms.y<290)
+		{
+			getimage(&img1,0,0,640,480);
+              break;
+		}
+		if(ms.x>160 && ms.x<460 && ms.y>120 && ms.y<420)
+		{
+			color=getpixel(ms.x,ms.y);
+			if(color==LIGHTGREEN)
+				color=WHITE;
+			else
+				color=LIGHTGREEN;
+			setfillcolor(color);
+			floodfill(ms.x,ms.y,RED);
+			
+			if(ms.x>160+60)
+			{
+				  color=getpixel(ms.x-60,ms.y);
+			      if(color==LIGHTGREEN)
+				     color=WHITE;
+			     else
+				     color=LIGHTGREEN;
+			     setfillcolor(color);
+			     floodfill(ms.x-60,ms.y,RED);
+			}
+			if(ms.x<460-60)
+			{
+				  color=getpixel(ms.x+60,ms.y);
+			      if(color==LIGHTGREEN)
+				     color=WHITE;
+			     else
+				     color=LIGHTGREEN;
+			     setfillcolor(color);
+			     floodfill(ms.x+60,ms.y,RED);
+			}
+			if(ms.y>120+60)
+			{
+				  color=getpixel(ms.x,ms.y-60);
+			      if(color==LIGHTGREEN)
+				     color=WHITE;
+			     else
+				     color=LIGHTGREEN;
+			     setfillcolor(color);
+			     floodfill(ms.x,ms.y-60,RED);
+			}
+			if(ms.y<420-60)
+			{
+				  color=getpixel(ms.x,ms.y+60);
+			      if(color==LIGHTGREEN)
+				     color=WHITE;
+			     else
+				     color=LIGHTGREEN;
+			     setfillcolor(color);
+			     floodfill(ms.x,ms.y+60,RED);
+			}
+		}
+       	for(m=0,i=0;i<5;i++)
+		  for(j=0;j<5;j++)
+		  {
+			color=getpixel(x+5+i*60,y+5+j*60);
+			if(color==LIGHTGREEN)
+				m++;
+		  }
+		if(m==0)
+			break;
+	}
+  }
+
+  finish = clock();
+  duration=(double)(finish - start)/CLOCKS_PER_SEC;
+  
+
+
+  setbkcolor(BLACK);
+  cleardevice(); 
+
+  settextstyle(50,50,_T("宋体"));
+  outtextxy(120,220,_T("游戏结束"));
+  getchar();
+  closegraph();
+
+  printf("游戏时间:%.3f秒\n",duration);
+}

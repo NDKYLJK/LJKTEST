@@ -1,0 +1,1153 @@
+#include<stdio.h>
+#include<string.h>
+#include<math.h>
+#include<stdlib.h>
+#include<graphics.h>
+#include<conio.h>
+#include<time.h>
+
+struct Body
+{
+	int x,y;
+	struct Body *next,*pre;
+};
+typedef struct Body body;
+struct Snake
+{
+    body *sh;// 蛇头;
+	body *st;// 蛇尾;
+	int dir;//方向;
+	int len;//长度;
+};
+typedef struct Snake snake;
+
+int ColorP; // 判断两条蛇相撞时;
+int fx,fy,flage=0; // 食物;
+int bx,by; // 障碍物;
+int SL=100; // 速度;
+int Time;   // 记录时间;
+
+void initSnake(Snake *s,int x,int y,int Color);//初始化蛇;  //共用;  
+void EatH(snake *s); // 吃掉（头与食物重合时）; // 共用;
+void SnakeHmove(snake *s);// 正常移动;          // 共用;
+void ClearEye(snake *s,int ch1,int ch2,int Color); // 清理眼睛作用; // 共用;
+void HeadEyes(snake *s,int Colo);// 专门画头的;    //共用的
+void pass(snake *s,int Color);//穿越边界   // 共用的；
+void Times(int n); // 显示游戏时间;        // 共用的
+void Choice();// 选择游戏的窗口;
+void Rule(); // 规则;
+snake *createSanke(); // 申请蛇;          // 共用的;
+
+// 双蛇;
+void Backgraph();// 背景;
+void Gameover(snake *s1,snake *s2,int n);// 游戏结束界面;
+void MoveSnake(snake *s1,snake *s2); // 蛇的移动;
+void Paint(snake *s1,snake *s2);// 画蛇;
+void dir(snake *s1,snake *s2,char ch,int Color1,int Color2); // 方向的改变;
+void Food(snake *s1,snake *s2); // 注意不能产生在蛇上面;
+void Grade(int len1,int len2); // 用来显示分数;
+int Ceash(snake *s1,snake *s2);  // 碰撞;
+
+//单条蛇;
+void Backgraph1();// 背景; 
+void Grade1(int len); //显示成绩;
+void Dir1(snake *s1,char ch,int Color); // 单条蛇的方向移动;
+void MoveSnake1(snake *s1);//蛇的移动;
+void Paint1(snake *s1); // 画蛇;
+void Food1(snake *s1);//食物;
+void Gameover1(snake *s1);// 游戏结束
+int  Ceash1(snake *s1); // 碰撞检测;
+
+void main()
+{
+    snake *s1,*s2;
+	char ch;
+	int Lim=1;
+	int Color1,Color2;
+	MOUSEMSG ms; //用于鼠标;
+	int XZ;
+
+	clock_t start,finish; //时间;
+
+	initgraph(640, 480);
+    srand((unsigned)time(NULL)); // 随机种子;
+
+    Choice(); // 选择游戏界面;
+	while(1)
+	{
+       ms=GetMouseMsg(); //实时监测；
+	   if(ms.uMsg==WM_LBUTTONDOWN)// 左键按下;
+		   if(ms.x>240 && ms.x<400 && ms.y>50 && ms.y<140)
+		   {
+			   XZ=1;
+			   break;
+		   }
+		   else if(ms.x>240 && ms.x<400 && ms.y>190 && ms.y<280)
+           {
+			   XZ=2;
+			   break;
+		   }
+		   else if(ms.x>240 && ms.x<400 && ms.y>330 && ms.y<420)
+		   {
+			   XZ=3;
+			   break;
+		   }
+		   else if(ms.x>450 && ms.x<600 && ms.y>340 && ms.y<410) 
+		   {
+			  setbkcolor(BLACK);
+			  cleardevice(); //清理;
+			  Rule();
+              while(1)
+			  {
+		            ms=GetMouseMsg(); //实时监测；
+	                if(ms.uMsg==WM_LBUTTONDOWN)// 左键按下;
+						if(ms.x>450 && ms.x<600 && ms.y>340 && ms.y<410)
+						{
+							setbkcolor(BLACK);
+                            cleardevice(); //清理;
+                            Choice();
+							break;
+						}
+			  }
+		   }
+	}
+    setbkcolor(BLACK);
+    cleardevice(); //清理;
+
+    setwritemode(R2_XORPEN);// 异或模式下画图;
+	if(XZ==1)// 单条蛇;
+	{
+         setfillcolor(RGB(255,111,111));
+	     fillcircle(100,100,50);
+	     setfillcolor(RGB(70,30,250)); // 眼睛的颜色;
+	     fillcircle(100,100,50);
+         Color1=getpixel(100,100);  // 眼睛与头部的混合色;
+
+	     Backgraph1(); // 背景;
+         s1=createSanke();// 创建蛇;
+
+	     setcolor(RED);
+	     setfillcolor(RGB(255,111,111));
+         initSnake(s1,50,50,RGB(255,111,111));//初始化蛇;
+	     start=clock(); // 开始计时;
+    
+	     while(1)
+		 {
+	         finish=clock(); // 目前截止记时;
+             Time=(int)(finish - start)/CLOCKS_PER_SEC; // (int)是可以改变为其他类型的;
+             if(SL>=30)
+	         SL=100-Time; // 随时间速度加快-Time;
+		     if(kbhit())
+			 {
+		      	ch=getch();
+			    if(ch==' ') break;
+			    else if(ch=='\r')
+				{
+				    while(1)
+                    if(kbhit()) 
+					{
+		            ch=getch();
+		            if(ch=='\r') break;
+					}
+				}
+			    else 
+			       Dir1(s1,ch,Color1);
+			 }
+
+		     Grade1(s1->len); // 成绩;
+  
+
+	        Times(Time); // 时间;
+
+	      	MoveSnake1(s1); // 移动;
+
+		    setcolor(RED);
+	        setfillcolor(RGB(255,111,111));
+	        pass(s1,RGB(255,111,111)); // 用于穿越;
+        
+		    Lim=Ceash1(s1);
+	        if(Lim==0) 
+		        break; // 相撞结束游戏;
+		 }
+		 Gameover1(s1);
+		 getch(); //关闭;
+	}
+	else if(XZ==2) // 双蛇;
+	{
+         setfillcolor(RGB(255,111,111));
+	     fillcircle(100,100,50);
+	     setfillcolor(RGB(70,30,250));
+	     fillcircle(100,100,50);
+         Color1=getpixel(100,100);
+
+	     setfillcolor(RGB(111,255,255));
+	     fillcircle(200,200,20);
+	     setfillcolor(RGB(70,30,250));
+	     fillcircle(200,200,20);
+	     Color2=getpixel(200,200);
+     
+	     Backgraph(); // 背景;
+ 
+	     s1=createSanke();
+	     s2=createSanke(); // 申请蛇;
+
+	     setcolor(RED);
+	     setfillcolor(RGB(255,111,111));
+         initSnake(s1,50,50,RGB(255,111,111));//初始化蛇;
+
+	     setcolor(RED);
+	     setfillcolor(RGB(111,255,255));
+         initSnake(s2,50,420,RGB(111,255,255)); // 初始化蛇;
+    
+	     start=clock(); //开始计时;每过一段时间加快速度;
+	     while(1)
+		 {
+	       finish=clock();
+           Time=(int)(finish - start)/CLOCKS_PER_SEC; // (int)是可以改变为其他类型的;
+           if(SL>=30)
+	          SL=100-Time; // 随时间速度加快-Time;
+
+	       if(kbhit()) 
+		   {
+		      ch=getch();
+		      if(ch==' ') break; //退出游戏;
+		      else if(ch=='\r') // 暂停作用;
+			  {
+                  while(1)
+				  {
+                      if(kbhit()) 
+					  {
+		                 ch=getch();
+		                 if(ch=='\r') break;
+					  }
+				  }
+			  }
+		      else
+			  {
+		         dir(s1,s2,ch,Color1,Color2);
+			  }
+		   }
+
+	       Grade(s1->len,s2->len); // 成绩;
+	       Times(Time); // 时间;
+
+	       MoveSnake(s1,s2); // 移动;
+
+	       setcolor(RED);
+	       setfillcolor(RGB(255,111,111));
+	       pass(s1,RGB(255,111,111)); // 用于穿越; 
+
+	       setcolor(RED);
+	       setfillcolor(RGB(111,255,255));
+	       pass(s2,RGB(111,255,255));// 用于穿越;
+    
+	       Lim=Ceash(s1,s2);
+	          if(Lim==0) 
+		          break; // 相撞结束游戏;
+     
+		}
+	    Gameover(s1,s2,Lim);
+		getch(); //关闭;
+	}
+	closegraph();
+}
+
+void Backgraph1()
+{
+	int i;
+
+	setbkcolor(BLACK);
+    cleardevice();
+
+	setcolor(GREEN);
+	for(i=0;i<=480;i+=10)
+		line(i,0,i,480);
+	for(i=0;i<=480;i+=10)
+		line(0,i,480,i);
+
+    settextstyle(25,0,_T("宋体"));// 输出字体的宽和高(取零自动匹配)还有类型;
+	settextcolor(RGB(230,120,110));           // 输出字体的颜色;
+	outtextxy(481,240,_T("玩家一:")); // 输出坐标和内容;
+	settextstyle(25,0,_T("宋体"));
+	settextcolor(RGB(230,120,110));
+	outtextxy(595,230,_T("W")); 
+	outtextxy(575,255,_T("A"));
+	outtextxy(595,255,_T("S"));
+	outtextxy(615,255,_T("D"));
+}
+
+snake *createSanke()
+{
+	snake *s;
+	s=(snake *)malloc(sizeof(snake));
+	if(s==NULL)  exit(0);
+    s->len=3;// 给予初时长度;
+    s->dir=4;// 初时方向;
+	s->sh=NULL;
+	s->st=NULL;
+	return s;
+}
+
+void initSnake(Snake *s,int x,int y,int Color)
+{
+    int i,n=5;
+	body *p;
+   
+	for(i=0;i<s->len;i++)
+	{
+		p=(body *)malloc(sizeof(body));
+		if(p==NULL)  exit(0);
+
+		p->next=NULL;
+		p->pre=NULL;
+		p->x=x;
+		p->y=y;
+
+		if(i==0)
+		{
+			s->sh=p;
+			s->st=p;
+		}
+		else
+		{
+			s->st->next=p;
+			p->pre=s->st;
+			s->st=p;
+		}
+		x-=10;
+	}
+	p=s->sh;
+	for(i=0;i<s->len;i++)
+	{
+		if(i==0)// 头不一样;
+		{
+		    fillroundrect(s->sh->x,s->sh->y,s->sh->x+10,s->sh->y+10,5,5);
+            HeadEyes(s,Color);
+		}
+		if(i!=0)
+		{
+		    fillcircle(p->x+5,p->y+5,n*1.00/(s->len)*((s->len)-i+1));
+		}
+		p=p->next;
+	}
+}
+
+void HeadEyes(snake *s,int Color)
+{
+	if(s->dir==1)
+	{
+	   fillcircle(s->sh->x+3,s->sh->y+3,2);// 先擦出位置;
+       fillcircle(s->sh->x+7,s->sh->y+3,2);// 先擦出位置;
+	   setfillcolor(RGB(70,30,250));
+	   fillcircle(s->sh->x+3,s->sh->y+3,2);// 换出有颜色的眼睛;
+       fillcircle(s->sh->x+7,s->sh->y+3,2);// 
+	   setfillcolor(Color); //换回颜色;
+	}
+	else if(s->dir==2)
+	{
+       fillcircle(s->sh->x+3,s->sh->y+3,2);// 先擦出位置;
+       fillcircle(s->sh->x+3,s->sh->y+7,2);// 先擦出位置;
+	   setfillcolor(RGB(70,30,250));
+	   fillcircle(s->sh->x+3,s->sh->y+3,2);// 先擦出位置;
+       fillcircle(s->sh->x+3,s->sh->y+7,2);
+	   setfillcolor(Color); //换回颜色;
+	}
+	else if(s->dir==3)
+	{
+       fillcircle(s->sh->x+7,s->sh->y+7,2);// 先擦出位置;
+       fillcircle(s->sh->x+3,s->sh->y+7,2);// 先擦出位置;
+	   setfillcolor(RGB(70,30,250));
+	   fillcircle(s->sh->x+7,s->sh->y+7,2);// 先擦出位置;
+       fillcircle(s->sh->x+3,s->sh->y+7,2);
+	   setfillcolor(Color); //换回颜色;
+	}
+	else if(s->dir==4)
+	{
+       fillcircle(s->sh->x+7,s->sh->y+7,2);// 先擦出位置;
+       fillcircle(s->sh->x+7,s->sh->y+3,2);// 先擦出位置;
+	   setfillcolor(RGB(70,30,250));
+	   fillcircle(s->sh->x+7,s->sh->y+7,2);// 先擦出位置;
+       fillcircle(s->sh->x+7,s->sh->y+3,2);
+	   setfillcolor(Color); //换回颜色;
+	}
+}
+
+void Dir1(snake *s1,char ch,int Color)
+{
+	switch(ch) // 方向的判定;
+    {
+	    case 'a':
+          if(s1->dir!=4)
+		  {
+		      ClearEye(s1,s1->dir,2,Color);
+		      s1->dir=2;
+		      break;
+		  }
+	    case 'd':
+	      if(s1->dir!=2)
+		  {
+		      ClearEye(s1,s1->dir,4,Color);
+		      s1->dir=4;
+		      break;
+		  }
+	    case 'w':
+          if(s1->dir!=3)
+		  {
+		      ClearEye(s1,s1->dir,1,Color);
+		      s1->dir=1;
+		      break;
+		  }
+	    case 's':
+	      if(s1->dir!=1)
+		  {
+		      ClearEye(s1,s1->dir,3,Color);
+		      s1->dir=3;
+		      break;
+		  }
+	}
+}
+
+void ClearEye(snake *s,int ch1,int ch2,int Clor)
+{
+	setfillcolor(Clor); // 这是要恢复为原来的颜色的;
+    if((ch1==1&&ch2==4)||(ch1==2&&ch2==3)||(ch1==3&&ch2==2)||(ch1==4&&ch2==1))
+    {
+       fillcircle(s->sh->x+3,s->sh->y+3,2);
+       fillcircle(s->sh->x+7,s->sh->y+7,2); 
+	   circle(s->sh->x+3,s->sh->y+3,2);
+       circle(s->sh->x+7,s->sh->y+7,2);
+    }
+    else if((ch1==1&&ch2==2)||(ch1==2&&ch2==1)||(ch1==3&&ch2==4)||(ch1==4&&ch2==3))
+    { 
+       fillcircle(s->sh->x+7,s->sh->y+3,2);// 擦;
+       fillcircle(s->sh->x+3,s->sh->y+7,2);// 擦;
+	   circle(s->sh->x+7,s->sh->y+3,2);
+	   circle(s->sh->x+3,s->sh->y+7,2);
+    }
+}
+
+void MoveSnake1(snake *s1)
+{
+	Sleep(SL); // 控制快慢;
+	Paint1(s1); // 擦去前面遗留init……;
+
+    Food1(s1);//食物;
+	if(s1->sh->x==fx && s1->sh->y==fy) 
+	  EatH(s1);
+	else
+	  SnakeHmove(s1); 
+
+ 	Paint1(s1);   //画出移动后;
+}
+
+void Paint1(snake *s1)
+{
+   int i;
+   int n=5;
+   body *p;
+   setcolor(RED);
+   setfillcolor(RGB(255,111,111));
+   p=s1->sh;
+   for(i=0;i<s1->len && p!=NULL;i++)
+   {
+		if(i==0)// 头不一样;
+		{
+		    fillroundrect(s1->sh->x,s1->sh->y,s1->sh->x+10,s1->sh->y+10,5,5); 	
+            HeadEyes(s1,RGB(255,111,111));
+		}
+		if(i!=0)
+		{
+		    fillcircle(p->x+5,p->y+5,n*1.00/(s1->len)*((s1->len)-i+1));
+		}
+		p=p->next;
+   }
+}
+
+void Food1(snake *s1)
+{
+	int  n1;
+    body *h1=s1->sh;
+
+	if(flage==0) // 注意食物不能出现在蛇的身上;
+	{
+	 while(1)
+     {
+		 while(1)
+		 {
+		     fx=rand()%48*10;
+		     fy=rand()%48*10;
+		     bx=rand()%48*10;
+		     by=rand()%48*10;
+			 if(bx!=fx || by!=fy)
+				 break;
+		 }
+		while(1)
+		{
+		  if(h1->x==fx&&h1->y==fy&&h1!=NULL && h1->x==bx&&h1->y==by)
+		  {
+			n1=1;
+			break;
+		  }
+		  if(h1->next==NULL)
+		  {
+			n1=0;
+			break;
+		  }
+		  h1=h1->next;
+		}
+		if(n1==0) // 没有产生在蛇身上;
+		  break;
+	    h1=s1->sh;
+	 }   
+	 setcolor(RED);
+	 setfillcolor(RGB(255,255,255)); //颜色;
+	 fillroundrect(bx+1,by+1,bx+9,by+9,4,4);
+	 setcolor(RED);
+	 setfillcolor(YELLOW); //颜色;
+	 fillroundrect(fx+1,fy+1,fx+9,fy+9,4,4);
+     flage=1;
+	}
+}
+
+void EatH(snake *s)
+{
+	body *p;
+	setcolor(RED);
+	setfillcolor(YELLOW); //颜色;
+	fillroundrect(fx+1,fy+1,fx+9,fy+9,4,4);
+
+	setcolor(RED);
+	setfillcolor(RGB(255,255,255)); //颜色;
+	fillroundrect(bx+1,by+1,bx+9,by+9,4,4);
+	
+	p=(body *)malloc(sizeof(body));
+	p->pre=NULL;
+	p->x=s->sh->x;
+	p->y=s->sh->y;
+        
+	switch(s->dir)
+	{
+        case 2:
+		   p->x-=10;break;
+	    case 4:
+		   p->x+=10;break;
+	    case 1:
+		   p->y-=10;break;
+	    case 3:
+		   p->y+=10;break;
+	}
+
+	p->next=s->sh;
+	s->sh->pre=p;
+    s->sh=p;
+	s->len++;
+
+	flage=0;
+}
+
+void SnakeHmove(snake *s)
+{
+	body *p;
+	p=s->st;
+	s->st=s->st->pre;
+	p->x=s->sh->x;
+	p->y=s->sh->y;
+	switch(s->dir)
+	{
+      case 2:
+		p->x-=10;break;
+	  case 4:
+		p->x+=10;break;
+	  case 1:
+		p->y-=10;break;
+	  case 3:
+		p->y+=10;break;
+	}
+	p->next=s->sh;
+	s->sh->pre=p;
+	s->sh=p;
+	s->st->next=NULL;
+}
+
+void pass(snake *s,int Color)
+{
+     if(s->sh->x<0||s->sh->x>470||s->sh->y<0||s->sh->y>470) // {边界} 第一个限制条件;
+	 {
+         if(s->sh->x<0)
+		 {//前面擦除;
+	          HeadEyes(s,Color);
+	          fillroundrect(s->sh->x,s->sh->y,s->sh->x+10,s->sh->y+10,5,5);	 
+	          s->sh->x=470;
+	          HeadEyes(s,Color);
+	          fillroundrect(s->sh->x,s->sh->y,s->sh->x+10,s->sh->y+10,5,5);
+		 }// 后面擦除;
+         else if(s->sh->x>470)
+		 {
+	           HeadEyes(s,Color);
+	           fillroundrect(s->sh->x,s->sh->y,s->sh->x+10,s->sh->y+10,5,5);
+	           s->sh->x=0;
+	           HeadEyes(s,Color);
+	           fillroundrect(s->sh->x,s->sh->y,s->sh->x+10,s->sh->y+10,5,5);
+		 }
+         else if(s->sh->y<0)
+		 {
+	           HeadEyes(s,Color);
+	           fillroundrect(s->sh->x,s->sh->y,s->sh->x+10,s->sh->y+10,5,5);
+	           s->sh->y=470;
+	           HeadEyes(s,Color);
+	           fillroundrect(s->sh->x,s->sh->y,s->sh->x+10,s->sh->y+10,5,5);
+		 }
+         else
+		 {
+	           HeadEyes(s,Color);
+	           fillroundrect(s->sh->x,s->sh->y,s->sh->x+10,s->sh->y+10,5,5);
+	           s->sh->y=0;
+	           HeadEyes(s,Color);
+	           fillroundrect(s->sh->x,s->sh->y,s->sh->x+10,s->sh->y+10,5,5);
+		 }
+	 }
+}
+
+int Ceash1(snake *s1)
+{
+	body *p,*q;
+	p=s1->sh;
+	q=s1->sh->next;
+	while(q)  // 自己相咬;
+	{
+		if(p->x==q->x && p->y==q->y)
+			return 0;
+		q=q->next;
+	}
+    if(s1->sh->x==bx && s1->sh->y==by)
+		return 0; // 撞到障碍物;
+	return 1; //没有相撞;
+}
+
+void Times(int n)
+{
+	int n1,n2,n3;
+    char T[7];
+    
+	n1=n%60;
+	T[6]='0'+n1%10;
+	T[5]='0'+n1/10;
+      
+	n2=n/60%60;
+	T[4]='0'+n2%10;
+	T[3]='0'+n2/10;
+
+	n3=n/60/60%60;
+	T[2]='0'+n3%10;
+	T[1]='0'+n3/10;
+
+	settextstyle(25,0,_T("宋体"));
+	settextcolor(RGB(255,255,255));
+	outtextxy(481,95,_T("时间:"));
+
+	outtextxy(545,95,_T(T[1]));
+	outtextxy(558,95,_T(T[2]));
+	outtextxy(570,95,_T(":"));
+	outtextxy(580,95,_T(T[3]));
+	outtextxy(595,95,_T(T[4]));
+	outtextxy(607,95,_T(":"));
+	outtextxy(617,95,_T(T[5]));
+	outtextxy(630,95,_T(T[6]));
+}
+
+void Grade1(int len)
+{
+	char R[4];
+    int r;
+	int i;
+	R[3]=0;
+	for(i=0;i<3;i++)
+		R[i]='0';
+
+	r=(len-3)*2;
+	   
+	if(r>=10&&r<=100)
+	{
+		R[2]='0'+r%10;
+		R[1]='0'+r/10;
+	}
+	else if(r>=100)
+	{
+        R[2]='0'+r%10;
+		R[1]='0'+r%100/10;
+		R[0]='0'+r/100;
+	}
+	else
+	{
+		R[2]='0'+r;
+	}
+
+    settextstyle(35,0,_T("宋体"));// 输出字体的宽和高(取零自动匹配)还有类型;
+	settextcolor(RGB(170,120,110));           // 输出字体的颜色;
+	outtextxy(500,25,_T("分:")); // 输出坐标和内容; 
+	
+	settextstyle(35,0,_T("宋体"));
+	settextcolor(RGB(230,120,110));
+	outtextxy(550,25,_T(R)); 
+
+}
+
+void Backgraph()
+{
+	int i;
+
+	setbkcolor(BLACK);
+    cleardevice();
+
+	setcolor(GREEN);
+	for(i=0;i<=480;i+=10)
+		line(i,0,i,480);
+	for(i=0;i<=480;i+=10)
+		line(0,i,480,i);
+
+	settextstyle(25,0,_T("宋体"));// 输出字体的宽和高(取零自动匹配)还有类型;
+	settextcolor(RGB(230,120,110));           // 输出字体的颜色;
+	outtextxy(481,200,_T("玩家一:")); // 输出坐标和内容;
+	settextcolor(RGB(130,220,240));
+	outtextxy(481,290,_T("玩家二:")); // 输出坐标和内容; //字符串和字符都可以用这样子输出; 
+	
+	settextstyle(25,0,_T("宋体"));
+	settextcolor(RGB(230,120,110));
+	outtextxy(595,190,_T("W")); 
+	outtextxy(575,215,_T("A"));
+	outtextxy(595,215,_T("S"));
+	outtextxy(615,215,_T("D"));
+
+    settextcolor(RGB(130,220,240));
+	outtextxy(595,280,_T("I"));
+	outtextxy(575,305,_T("J"));
+	outtextxy(595,305,_T("K"));
+	outtextxy(615,305,_T("L"));
+}
+
+void Gameover(snake *s1,snake *s2,int n)
+{
+	int n1,n2,n3;
+    char T[7];
+
+	setbkcolor(BLACK);
+    cleardevice();
+	settextcolor(RGB(255,255,255));
+	settextstyle(70,0,_T("宋体"));
+    outtextxy(180,80,_T("游戏结束"));
+	if(s1->len>s2->len)
+	{
+        settextcolor(RED);
+		settextstyle(50,0,_T("宋体"));
+	    outtextxy(210,180,_T("红方胜利"));
+	}
+	else if(s1->len<s2->len)
+	{
+        settextcolor(BLUE);
+		settextstyle(50,0,_T("宋体"));
+	    outtextxy(210,180,_T("蓝方胜利"));
+	}
+	else
+	{
+        settextcolor(RGB(255,255,255));
+		settextstyle(50,0,_T("宋体"));
+	    outtextxy(210,180,_T("双方平局"));
+	}	
+}
+
+void MoveSnake(snake *s1,snake *s2)
+{
+    Sleep(SL);
+	Paint(s1,s2); // 擦去前面遗留init……;
+
+    Food(s1,s2);//食物;
+	if(s1->sh->x==fx && s1->sh->y==fy) 
+	  EatH(s1);
+	else if(s2->sh->x==fx && s2->sh->y==fy)
+	  EatH(s2);
+	else
+	{
+	   SnakeHmove(s1);
+	   SnakeHmove(s2);
+	}
+ 	Paint(s1,s2);   //画出移动后;
+}
+
+void Paint(snake *s1,snake *s2)
+{
+   int i;
+   int n=5;
+   body *p;
+   setcolor(RED);
+   setfillcolor(RGB(255,111,111));
+   p=s1->sh;
+   for(i=0;i<s1->len && p!=NULL;i++)
+   {
+		if(i==0)// 头不一样;
+		{
+		    fillroundrect(s1->sh->x,s1->sh->y,s1->sh->x+10,s1->sh->y+10,5,5); 	
+            HeadEyes(s1,RGB(255,111,111));
+		}
+		if(i!=0)
+		{
+		    fillcircle(p->x+5,p->y+5,n*1.00/(s1->len)*((s1->len)-i+1));
+		}
+		p=p->next;
+   }
+   setcolor(RED);
+   setfillcolor(RGB(111,255,255));
+   p=s2->sh;
+   for(i=0;i<s2->len && p!=NULL;i++)
+   {
+		if(i==0)// 头不一样;
+		{
+		    fillroundrect(s2->sh->x,s2->sh->y,s2->sh->x+10,s2->sh->y+10,5,5); 	
+		    HeadEyes(s2,RGB(111,255,255)); 
+		}
+		if(i!=0)
+		{
+		    fillcircle(p->x+5,p->y+5,n*1.00/(s2->len)*((s2->len)-i+1));
+		}
+		p=p->next;
+   }
+}
+
+void dir(snake *s1,snake *s2,char ch,int Color1,int Color2)
+{
+	// 每转一次都要处理一次眼睛;
+   switch(ch) // 方向的判定;
+   {
+	case 'a':
+      if(s1->dir!=4)
+	  {
+		  ClearEye(s1,s1->dir,2,Color1);
+		  s1->dir=2;
+		  break;
+	  }
+	case 'd':
+	  if(s1->dir!=2)
+	  {
+		  ClearEye(s1,s1->dir,4,Color1);
+		  s1->dir=4;
+		  break;
+	  }
+	case 'w':
+      if(s1->dir!=3)
+	  {
+		  ClearEye(s1,s1->dir,1,Color1);
+		  s1->dir=1;
+		  break;
+	  }
+	case 's':
+	  if(s1->dir!=1)
+	  {
+		  ClearEye(s1,s1->dir,3,Color1);
+		  s1->dir=3;
+		  break;
+	  }
+	case 'j':
+      if(s2->dir!=4)
+	  {
+		  ClearEye(s2,s2->dir,2,Color2);
+		  s2->dir=2;
+		  break;
+	  }
+	case 'l':
+	  if(s2->dir!=2)
+	  {
+		  ClearEye(s2,s2->dir,4,Color2);
+		  s2->dir=4;
+		  break;
+	  }
+	case 'i':
+      if(s2->dir!=3)
+	  {
+		  ClearEye(s2,s2->dir,1,Color2);
+		  s2->dir=1;
+		  break;
+	  }
+	case 'k':
+	  if(s2->dir!=1)
+	  {
+		  ClearEye(s2,s2->dir,3,Color2);
+		  s2->dir=3;
+		  break;
+	  }
+   }
+}
+
+void Food(snake *s1,snake *s2)
+{
+    int  n1,n2;
+    body *h1=s1->sh;
+	body *h2=s2->sh;
+	if(flage==0) // 注意食物不能出现在蛇的身上;
+	{
+	 while(1)
+     {
+		while(1)
+		{
+		     fx=rand()%48*10;
+		     fy=rand()%48*10;
+		     bx=rand()%48*10;
+		     by=rand()%48*10;
+			 if(bx!=fx || by!=fy)
+				 break;
+		}
+		while(1)
+		{
+		  if(h1->x==fx&&h1->y==fy&&h1!=NULL&&h1->x==by&&h1->x==by)
+		  {
+			n1=1;
+			break;
+		  }
+		  if(h1->next==NULL)
+		  {
+			n1=0;
+			break;
+		  }
+		  h1=h1->next;
+		}
+		while(1)
+		{
+		  if(h2->x==fx&&h2->y==fy&&h2!=NULL&&h2->x==by&&h2->x==by)
+		  {
+			n2=1;
+			break;
+		  }
+		  if(h2->next==NULL)
+		  {
+			n2=0;
+			break;
+		  }
+		  h2=h2->next;
+		}
+		if(n1==0 && n2==0)
+		  break;
+	    h1=s1->sh;
+		h2=s2->sh;
+	 }     
+	 setcolor(RED);
+	 setfillcolor(YELLOW); //颜色;
+	 fillroundrect(fx+1,fy+1,fx+9,fy+9,4,4);
+	 setcolor(RED);
+	 setfillcolor(RGB(255,255,255)); //颜色;
+	 fillroundrect(bx+1,by+1,bx+9,by+9,4,4);
+     flage=1;
+	}
+}
+
+void Grade(int len1,int len2)
+{
+    char R[4],B[4];
+    int r,b;
+	int i;
+	for(i=0;i<3;i++)
+	{
+		R[i]='0';
+		B[i]='0';
+	}
+	R[3]=B[3]=0;
+
+	r=(len1-3)*3;
+	   
+	b=(len2-3)*2; // 吃一个得2分;
+	if(r>=10&&r<=100)
+	{
+		R[2]='0'+r%10;
+		R[1]='0'+r/10;
+	}
+	else if(r>=100)
+	{
+        R[2]='0'+r%10;
+		R[1]='0'+r%100/10;
+		R[0]='0'+r/100;
+	}
+	else
+	{
+		R[2]='0'+r;
+	}
+
+	if(b>=10&&b<=100)
+	{
+	    B[2]='0'+b%10;
+		B[1]='0'+b/10;
+	}
+	else if(b>=100)
+	{
+        B[2]='0'+b%10;
+		B[1]='0'+b%100/10;
+		B[0]='0'+b/100;
+	}
+	else
+	{
+		B[2]='0'+b;
+	}
+    settextstyle(35,0,_T("宋体"));// 输出字体的宽和高(取零自动匹配)还有类型;
+	settextcolor(RGB(230,120,110));           // 输出字体的颜色;
+	outtextxy(500,5,_T("红:")); // 输出坐标和内容;
+	settextcolor(RGB(130,220,240));
+	outtextxy(500,40,_T("蓝:")); // 输出坐标和内容;                     
+	
+	settextstyle(35,0,_T("宋体"));
+	settextcolor(RGB(230,120,110));
+	outtextxy(570,5,_T(R)); 
+    settextcolor(RGB(130,220,240));
+    outtextxy(570,40,_T(B)); 
+}
+
+
+int Ceash(snake *s1,snake *s2)
+{
+	body *p,*q;
+	p=s1->sh;
+	q=s2->sh;
+    if(p->x==bx && p->y==by)
+		return 0;
+	if(q->x==bx && q->y==by)
+		return 0; //障碍物; 
+	while(q) // 相撞;
+	{
+		if(p->x==q->x && p->y==q->y)
+			return 0;
+		q=q->next;
+	}
+	q=s1->sh;
+	p=s2->sh;
+	while(q)
+	{
+		if(p->x==q->x && p->y==q->y)
+			return 0;
+		q=q->next;
+	}
+
+	p=s1->sh;
+	q=s1->sh->next;
+	while(q)  // 自己相咬;
+	{
+		if(p->x==q->x && p->y==q->y)
+			return 0;
+		q=q->next;
+	}
+	p=s2->sh;
+	q=s2->sh->next;
+	while(q)
+	{
+		if(p->x==q->x && p->y==q->y)
+			return 0;
+		q=q->next;
+	}
+	return 1; // 没有发生碰撞;
+}
+
+void Gameover1(snake *s1)
+{
+	char R[4];
+    int r;
+	int i;
+	R[3]=0;
+	for(i=0;i<3;i++)
+		R[i]='0';
+
+	r=(s1->len-3)*2;
+	   
+	if(r>=10&&r<=100)
+	{
+		R[2]='0'+r%10;
+		R[1]='0'+r/10;
+	}
+	else if(r>=100)
+	{
+        R[2]='0'+r%10;
+		R[1]='0'+r%100/10;
+		R[0]='0'+r/100;
+	}
+	else
+	{
+		R[2]='0'+r;
+	}
+    
+	setbkcolor(BLACK);
+    cleardevice();
+	settextcolor(RGB(255,255,255));
+	settextstyle(70,0,_T("宋体"));
+    outtextxy(180,80,_T("游戏结束"));
+    
+    settextstyle(45,0,_T("宋体"));// 输出字体的宽和高(取零自动匹配)还有类型;
+	settextcolor(RGB(170,120,110));           // 输出字体的颜色;
+	outtextxy(230,190,_T("分:")); // 输出坐标和内容;
+	                            //字符串和字符都可以用这样子输出; 
+	settextstyle(45,0,_T("宋体"));
+	settextcolor(RGB(230,120,110));
+	outtextxy(300,190,_T(R));
+} 
+
+void Choice()
+{
+    setcolor(RGB(200,255,255));
+    setlinestyle(PS_SOLID,10);
+	rectangle(240,50,400,140);
+	rectangle(240,190,400,280);
+	rectangle(240,330,400,420);
+	rectangle(450,340,600,410);
+
+	settextstyle(60,0,_T("宋体"));
+	settextcolor(RGB(50,255,255));
+    
+    outtextxy(70,60,_T("贪"));
+	outtextxy(70,200,_T("吃"));
+	outtextxy(70,340,_T("蛇"));
+
+	settextstyle(40,0,_T("宋体"));
+	settextcolor(RGB(50,255,255));
+	outtextxy(280,75,_T("单人"));
+	outtextxy(280,215,_T("双人"));
+	outtextxy(280,355,_T("退出"));
+	outtextxy(480,355,_T("规则"));
+	setlinestyle(PS_SOLID,1); // 回到原来画线状态;
+}
+
+void Rule()
+{
+
+    setcolor(RGB(200,255,255));
+    setlinestyle(PS_SOLID,10);
+
+	settextstyle(40,0,_T("宋体"));
+	rectangle(450,340,600,410);
+    outtextxy(480,355,_T("返回"));
+ 
+	settextstyle(30,0,_T("宋体"));// 输出字体的宽和高(取零自动匹配)还有类型;
+	settextcolor(RGB(230,120,110));           // 输出字体的颜色;
+	outtextxy(60,15,_T("玩家一:")); // 输出坐标和内容;
+	settextcolor(RGB(130,220,240));
+	outtextxy(60,75,_T("玩家二:")); // 输出坐标和内容; //字符串和字符都可以用这样子输出;
+    settextcolor(RGB(200,255,255));
+	outtextxy(60,135,_T("特殊按键:"));
+	outtextxy(60,260,_T("规则:"));
+
+	settextstyle(25,0,_T("宋体"));
+	settextcolor(RGB(230,120,110));
+	outtextxy(185,5,_T("W")); 
+	outtextxy(170,30,_T("A"));
+	outtextxy(185,30,_T("S"));
+	outtextxy(200,30,_T("D"));
+    settextcolor(RGB(130,220,240));
+    outtextxy(185,65,_T("I")); 
+	outtextxy(170,90,_T("J"));
+	outtextxy(185,90,_T("K"));
+	outtextxy(200,90,_T("L"));
+	settextcolor(RGB(200,255,255));
+	outtextxy(90,180,_T("空格键退出"));
+	outtextxy(90,220,_T("回车键暂停"));
+    outtextxy(90,310,_T("1.不可'咬'到自己"));
+	outtextxy(90,350,_T("2.遇到边界可穿越"));
+	outtextxy(90,390,_T("3.不可'咬'到对方(双人时)"));
+	outtextxy(90,430,_T("4.分数高的获胜(双人时)"));
+	outtextxy(360,15,_T("5.随时间速度加快"));
+	outtextxy(360,55,_T("6.吃一个食物累计两分"));
+	outtextxy(360,95,_T("7.会有障碍物(白色)"));
+
+	setlinestyle(PS_SOLID,1); // 回到原来画线状态;
+}
+
